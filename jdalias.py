@@ -48,22 +48,22 @@ def shell_func(jdalias_path):
 
     expansion = {
         'timestamp': str(datetime.datetime.today()),
-        'SHELLFUN_NAME': SHELLFUN_NAME, 
+        'SHELLFUN_NAME': SHELLFUN_NAME,
         'jdalias_path': jdalias_path
          }
 
     template = """#####################################################
-# Wrapper and bash completion for jadlias.py, 
+# Wrapper and bash completion for jadlias.py,
 # Auto-written by installer on %(timestamp)s.
 # Source/copy this into bash.bashrc or the equivalent.
 # Invoke via "%(SHELLFUN_NAME)s".
 
-# if 'jdalias.py' is not on this path, modify this 
+# if 'jdalias.py' is not on this path, modify this
 # to point at the correct location
-JDALIAS='%(jdalias_path)s' 
+JDALIAS='%(jdalias_path)s'
 
 function %(SHELLFUN_NAME)s() {
- 
+
     if [ $# = 0 ]
     then
         # no parameters specified on command line:
@@ -97,7 +97,7 @@ function %(SHELLFUN_NAME)s() {
 
 ######################################################
 # Bash completion for %(SHELLFUN_NAME)s
-_%(SHELLFUN_NAME)s() 
+_%(SHELLFUN_NAME)s()
 {
     local cur prev opts
     COMPREPLY=()
@@ -111,7 +111,7 @@ _%(SHELLFUN_NAME)s()
     fi
 }
 
-complete -F _%(SHELLFUN_NAME)s %(SHELLFUN_NAME)s 
+complete -F _%(SHELLFUN_NAME)s %(SHELLFUN_NAME)s
 """ % expansion
 
     return template
@@ -125,7 +125,7 @@ def source_into_shellrc(shellrc, shellfun_path, quiet=False, force_create=False)
                 # destination script already sourced in .bashrc ...
                 # skip modifying bash
                 if not quiet:
-                    print '    Skipping modification: "%s" already sources "%s".' % (shellrc, shellfun_path)
+                    print('    Skipping modification: "%s" already sources "%s".' % (shellrc, shellfun_path))
                     modbash = False
                     break
     else:
@@ -135,8 +135,8 @@ def source_into_shellrc(shellrc, shellfun_path, quiet=False, force_create=False)
             modbash = False
     if modbash:
         if not quiet:
-            print
-            print '    Modifying shell resource file "%s" to source "%s" ...' % (shellrc, shellfun_path)
+            print("")
+            print('    Modifying shell resource file "%s" to source "%s" ...' % (shellrc, shellfun_path))
         b = open(shellrc, 'a')
         b.write('\n')
         b.write('# source jdalias wrapper function\n')
@@ -144,88 +144,88 @@ def source_into_shellrc(shellrc, shellfun_path, quiet=False, force_create=False)
         b.write('\n')
         b.close()
     return modbash
-    
+
 def install_jdalias(install_path=None, quiet=False):
 
     # set up directory
     if not install_path:
         install_path = jdalias_default_directory()
     if not quiet:
-        print
-        print 'STARTING BOOTSTRAP INSTALL FROM: "%s"' % os.path.abspath(sys.argv[0]) 
+        print("")
+        print('STARTING BOOTSTRAP INSTALL FROM: "%s"' % os.path.abspath(sys.argv[0]))
         #print 'INSTALLING TO: "%s" ...' % install_path
 
     # directory creation
     if not quiet:
-        print
-        print 'CREATING INSTALLATION DIRECTORY: "%s"' % install_path
+        print("")
+        print('CREATING INSTALLATION DIRECTORY: "%s"' % install_path)
     if os.path.exists(install_path):
         if os.path.isdir(install_path):
             if not quiet:
-                print "    Skipping directory creation: already exists."
+                print("    Skipping directory creation: already exists.")
         else:
-            print >>sys.stderr, 'File called "%s" already exists. Cannot create installation directory.'
+            sys.stderr.write('File called "%s" already exists. Cannot create installation directory.' % install_path)
             sys.exit(1)
     else:
         os.makedirs(install_path)
-        print "    Directory created."
+        print("    Directory created.")
 
     # set up alias manager script
     if not quiet:
-        print
-        print 'COPYING ALIAS MANAGER SCRIPT ...'
+        print("")
+        print('COPYING ALIAS MANAGER SCRIPT ...')
     source = os.path.abspath(sys.argv[0])
     destfname = os.path.basename(sys.argv[0])
     dest = os.path.join(install_path, destfname)
     if os.path.exists(dest) and os.path.samefile(source, dest):
         # probably can also use if (os.path.abspath(source))==(os.path.abspath(dest)):
-        print '    Script is trying to install itself on top of itself!'
-        print '    Invoked script was "%s"' % os.path.abspath(sys.argv[0])
-        print '    If you meant to invoke a script of the same name in another'
-        print '    location please call the script explicitly using its full path.'
-        print '    Skipping copying of script for now.'
+        print('    Script is trying to install itself on top of itself!')
+        print('    Invoked script was "%s"' % os.path.abspath(sys.argv[0]))
+        print('    If you meant to invoke a script of the same name in another')
+        print('    location please call the script explicitly using its full path.')
+        print('    Skipping copying of script for now.')
     else:
         shutil.copyfile(source, dest)
-        os.chmod(dest, 0755)        
+        os.chmod(dest, 0o0755)
         if not quiet:
-            print '    Alias manager script copied to installation directory, "%s".' % dest
+            print('    Alias manager script copied to installation directory, "%s".' % dest)
 
     # set up bash script
     shellfun_path = os.path.join(install_path, 'jd.sh')
     sh = open(shellfun_path, 'w')
     sh.write(shell_func(dest)+'\n')
     sh.close()
-    
+
     modbash = True
-    
+
     ## TODO: deal with alternate rc files: cshrc etc.
     ## by searching through all possibilities
     shellrc = os.path.expanduser('~/.bashrc')
     if not quiet:
-        print
-        print 'SOURCING SHELL FUNCTIONS INTO RESOURCE FILE: "%s"' % shellrc
+        print("")
+        print('SOURCING SHELL FUNCTIONS INTO RESOURCE FILE: "%s"' % shellrc)
     if os.path.exists(shellrc):
         source_into_shellrc(shellrc, shellfun_path, quiet)
         if not quiet:
-            print
-            print "INSTALLATION COMPLETE!"
-            print "    You will need to relogin or start a new shell to use the utility."
-            print '    Use "%s -a <ALIAS> </PATH/TO/DIRECTORY>" to begin defining aliases.' % SHELLFUN_NAME
-            print '    Use "%s --help" to see available options.' % SHELLFUN_NAME
+            print("")
+            print("INSTALLATION COMPLETE!")
+            print("    You will need to relogin or start a new shell to use the utility.")
+            print('    Use "%s -a <ALIAS> </PATH/TO/DIRECTORY>" to begin defining aliases.' % SHELLFUN_NAME)
+            print('    Use "%s --help" to see available options.' % SHELLFUN_NAME)
 
     else:
-        print >>sys.stderr, ''
-        print >>sys.stderr, 'Could not find default shell resource file "%s".' % shellrc
-        print >>sys.stderr, 'Please edit the appropriate file yourself, and include the following'
-        print >>sys.stderr, 'line at the end of the file:'
-        print >>sys.stderr, ''
-        print >>sys.stderr, '    . %s' % shellfun_path
-        print >>sys.stderr, ''
-        print >>sys.stderr, 'You will then need to relogin to use this utility.'
-        print >>sys.stderr, 'Use "%s -a <ALIAS> </PATH/TO/DIRECTORY>" to begin defining aliases.' % SHELLFUN_NAME
-        print >>sys.stderr, 'Use "%s --help" to see available options.' % SHELLFUN_NAME
-    
-        
+        sys.stderr.write('\n')
+        sys.stderr.write('Could not find default shell resource file "%s".\n' % shellrc)
+        sys.stderr.write('Please edit the appropriate file yourself, and include the following\n')
+        sys.stderr.write('line at the end of the file:\n')
+        sys.stderr.write('\n')
+        sys.stderr.write('    . %s\n' % shellfun_path)
+        sys.stderr.write('\n')
+        sys.stderr.write('You will then need to relogin to use this utility.\n')
+        sys.stderr.write('Use "%s -a <ALIAS> </PATH/TO/DIRECTORY>" to begin defining aliases.\n' % SHELLFUN_NAME)
+        sys.stderr.write('Use "%s --help" to see available options.\n' % SHELLFUN_NAME)
+
+
 class AliasManager(object):
     def __init__(self, alias_filepath=None):
         self.__alias_filepath = None
@@ -273,9 +273,9 @@ class AliasManager(object):
     def parse_error(self, line_number, line, message):
         # probably should raise an exception
         # here in production code
-        print 'Error parsing alias file "%s", line %d:' % (self.alias_filepath, line_number)
-        print '>>',line
-        print message
+        print('Error parsing alias file "%s", line %d:' % (self.alias_filepath, line_number))
+        print('>>',line)
+        print(message)
         sys.exit(1)
     def save_aliases(self):
         afile = open(self.alias_filepath, 'w')
@@ -284,7 +284,7 @@ class AliasManager(object):
         afile.close()
     def load_aliases(self):
         self.aliases = []
-        self.alias_mappings = {}        
+        self.alias_mappings = {}
         if os.path.exists(self.alias_filepath):
             afile = open(self.alias_filepath,'r')
             lines = afile.readlines()
@@ -311,7 +311,7 @@ class AliasManager(object):
                         self.alias_mappings[alias] = target
     def add_alias(self, alias, directory, prompt_to_overwrite=True):
         directory = os.path.abspath(os.path.expanduser(directory))
-        if self.alias_mappings.has_key(alias) and prompt_to_overwrite:
+        if alias in self.alias_mappings and prompt_to_overwrite:
             ok = raw_input('Alias "%s" (=> "%s") already exists.\nReplace with new definition (y/N)? ' % (alias, self.alias_mappings[alias]))
             if not ok.lower().strip().startswith('y'):
                 return
@@ -336,7 +336,7 @@ class AliasManager(object):
                 pass
             self.save_aliases()
         else:
-            print 'Alias "%s" not found.' % raw_alias
+            print('Alias "%s" not found.' % raw_alias)
     def sort_aliases(self):
         if len(self.aliases) > 0:
             self.aliases.sort()
@@ -351,7 +351,7 @@ class AliasManager(object):
                     pass
                 else:
                     if not quiet:
-                        print 'Removing broken alias "%s": %s' % (alias, aliased_dir)
+                        print('Removing broken alias "%s": %s' % (alias, aliased_dir))
                     self.remove_alias(alias, prompt_to_confirm=False)
     def list_aliases(self, show_broken=False):
         if len(self.aliases) > 0:
@@ -360,23 +360,22 @@ class AliasManager(object):
             for a in self.aliases:
                 mapping = self.alias_mappings[a]
                 alias = "%3d: %s %s" % (i+1, (a + ' ').ljust(max_len), mapping)
-                if show_broken:                    
+                if show_broken:
                     if os.path.exists(self.alias_mappings[a]):
                         if os.path.isdir(self.alias_mappings[a]):
-                            #print '     OK'
                             pass
                         else:
-                            print alias
-                            print '     ERROR: Path is not a directory'
+                            print(alias)
+                            print('     ERROR: Path is not a directory')
                     else:
-                        print alias
-                        print '     ERROR: Path does not exist'
+                        print(alias)
+                        print('     ERROR: Path does not exist')
                 else:
-                    print alias
+                    print(alias)
                 i = i + 1
         else:
-            print 'No aliases defined in "%s".' % self.alias_filepath
-            print 'Use "%s -a </path/to/directory>" to define an alias.' % SHELLFUN_NAME 
+            print('No aliases defined in "%s".' % self.alias_filepath)
+            print('Use "%s -a </path/to/directory>" to define an alias.' % SHELLFUN_NAME)
     def jump_to(self, alias):
         """
         Unfortunately any directory change executed within this script
@@ -391,13 +390,13 @@ class AliasManager(object):
         """
     def evaluate(self, alias):
         alias = self.match_alias(alias)
-        if alias and self.alias_mappings.has_key(alias):
+        if alias and alias in self.alias_mappings:
             return self.alias_mappings[alias]
         else:
             return ''
     def check_alias(self, alias):
         alias = self.match_alias(alias)
-        if alias and self.alias_mappings.has_key(alias):
+        if alias and alias in self.alias_mappings:
             return True
         else:
             return False
@@ -424,7 +423,7 @@ def main():
     parser.add_option("--sort-aliases", dest="sort_aliases", default=False, action="store_true", help="sort alias definitions alphabetically by aliases and resave")
 #    parser.add_option("--sort-dirs", dest="sort_directories", default=False, action="store_true", help="sort alias definitions alphabetically by directory paths and resave")
     parser.add_option("--broken", dest="broken", default=False, action="store_true", help="list broken/invalid aliases")
-    parser.add_option("--clean", dest="clean", default=False, action="store_true", help="clean (remove) broken/invalid aliases")    
+    parser.add_option("--clean", dest="clean", default=False, action="store_true", help="clean (remove) broken/invalid aliases")
     parser.add_option("--install", dest="install", default=False, action="store_true", help="install the jdalias system for the current user")
     parser.add_option("--choices", dest="choices", default=False, action="store_true", help="list all alias choices (for bash autocompletion)")
     (options, args) = parser.parse_args()
@@ -445,11 +444,11 @@ def main():
         elif options.clean:
             jd_aliases.clean_aliases()
         elif options.choices:
-            print jd_aliases.choices()
+            print(jd_aliases.choices())
         else:
             if len(args) == 0:
-                print 'Please install the system by calling: "python jdalias.py --install".'
-                print 'Once installation is completed successfully, invoke by using "jd".'
+                print('Please install the system by calling: "python jdalias.py --install".')
+                print('Once installation is completed successfully, invoke by using "jd".')
                 sys.exit(1)
             else:
                 if options.add_alias:
@@ -463,7 +462,7 @@ def main():
                 elif options.remove_alias:
                     jd_aliases.remove_alias(args[0], not options.no_confirm)
                 else:
-                    print jd_aliases.evaluate(args[0])
-                
+                    print(jd_aliases.evaluate(args[0]))
+
 if __name__ == "__main__":
     main()
